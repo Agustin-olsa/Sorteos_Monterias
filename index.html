@@ -89,7 +89,7 @@ tr:nth-child(even) td{background:#f9faf8}
 <section id="s1" class="on">
 <h2>Datos de la montería</h2>
 <p class="help">Escribe el nombre, indica cuántas armadas habrá y el número de puestos de cada una.</p>
-<div class="bar"><select id="nube" style="width:auto;display:none"><option value="">Abrir montería guardada…</option></select><button class="btn alt" id="bGuardar">☁ Guardar en la nube</button><button class="btn alt" id="bNueva">Nueva montería</button></div>
+<div class="bar"><select id="nube" style="width:auto;display:none"><option value="">Abrir montería guardada…</option></select><button class="btn alt" id="bBorrar" style="display:none">🗑 Borrar de la nube</button><button class="btn alt" id="bGuardar">☁ Guardar en la nube</button><button class="btn alt" id="bNueva">Nueva montería</button></div>
 <div class="row"><div style="flex:2"><label for="nombre">Nombre de la montería</label><input id="nombre" placeholder="Ej.: Cerro el Moro"></div>
 <div><label for="nArm">Nº de armadas</label><input id="nArm" type="number" min="1" max="60" placeholder="10"></div>
 <button class="btn" id="bGen">Crear armadas</button></div>
@@ -134,7 +134,7 @@ const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const vacio=()=>({nombre:'',armadas:[],postores:[],socios:[],resA:null,resP:null});
 let S=JSON.parse(localStorage.getItem('monteria')||'null')||vacio();
 let db=null;
-if(FIREBASE_CONFIG.apiKey){try{firebase.initializeApp(FIREBASE_CONFIG);db=firebase.firestore();$('#nube').style.display='';}catch(e){console.error(e)}}
+if(FIREBASE_CONFIG.apiKey){try{firebase.initializeApp(FIREBASE_CONFIG);db=firebase.firestore();$('#nube').style.display='';$('#bBorrar').style.display='';}catch(e){console.error(e)}}
 else $('#bGuardar').style.display='none';
 const guardar=()=>localStorage.setItem('monteria',JSON.stringify(S));
 const msg=(id,t,ok)=>$(id).innerHTML=t?`<div class="msg ${ok?'ok':''}">${t}</div>`:'';
@@ -231,6 +231,12 @@ $('#bGuardar').onclick=async()=>{S.nombre=$('#nombre').value.trim();if(!S.nombre
 $('#nube').onchange=async e=>{if(!e.target.value)return;const d=await db.collection('monterias').doc(e.target.value).get();
   if(d.exists){S=Object.assign(vacio(),d.data());guardar();init();}};
 
+$('#bBorrar').onclick=async()=>{const id=$('#nube').value;
+  if(!id)return msg('#m1','Elige primero, en el desplegable, la montería que quieres borrar.');
+  const nom=$('#nube').selectedOptions[0].textContent;
+  if(!confirm('¿Borrar «'+nom+'» de la nube? No se puede deshacer.'))return;
+  try{await db.collection('monterias').doc(id).delete();msg('#m1','Montería «'+esc(nom)+'» borrada de la nube.',1);listaNube();}
+  catch(e){console.error(e);msg('#m1','No se pudo borrar. Revisa que has iniciado sesión y las reglas de Firestore.');}};
 function init(){pintaArm();listaUI('postores','#uiPost','#m2');listaUI('socios','#uiSoc','#m3');pintaRes();listaNube();}
 /* Acceso con usuario y contraseña */
 const gate=$('#gate');$('#gLogo').src=LOGO;
