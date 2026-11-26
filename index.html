@@ -224,16 +224,17 @@ $('#bSorP').onclick=()=>{
   S.resP={armadas,reserva:pool.slice(libres),vacios};msg('#m3','');guardar();pintaRes();};
 
 /* Nube */
-async function listaNube(){if(!db)return;const q=await db.collection('monterias').get();
-  $('#nube').innerHTML='<option value="">Abrir montería guardada…</option>'+q.docs.map(d=>`<option value="${d.id}">${esc(d.data().nombre||d.id)}</option>`).join('');}
+async function listaNube(){if(!db)return;const v=$('#nube').value;const q=await db.collection('monterias').get();
+  $('#nube').innerHTML='<option value="">Abrir montería guardada…</option>'+q.docs.map(d=>`<option value="${d.id}">${esc(d.data().nombre||d.id)}</option>`).join('');$('#nube').value=v;}
 $('#bGuardar').onclick=async()=>{S.nombre=$('#nombre').value.trim();if(!S.nombre)return msg('#m1','Escribe el nombre de la montería para guardarla.');
   try{await db.collection('monterias').doc(S.nombre.toLowerCase().replace(/\W+/g,'-')).set(JSON.parse(JSON.stringify(S)));guardar();msg('#m1','Montería guardada en la nube.',1);listaNube();}catch(e){msg('#m1','No se pudo guardar en la nube. Revisa la configuración de Firebase.');}};
 $('#nube').onchange=async e=>{if(!e.target.value)return;const d=await db.collection('monterias').doc(e.target.value).get();
   if(d.exists){S=Object.assign(vacio(),d.data());guardar();init();}};
 
-$('#bBorrar').onclick=async()=>{const id=$('#nube').value;
-  if(!id)return msg('#m1','Elige primero, en el desplegable, la montería que quieres borrar.');
-  const nom=$('#nube').selectedOptions[0].textContent;
+$('#bBorrar').onclick=async()=>{const id=$('#nube').value||$('#nombre').value.trim().toLowerCase().replace(/\W+/g,'-');
+  const op=[...$('#nube').options].find(o=>o.value===id);
+  if(!id||!op)return msg('#m1','Esa montería no está guardada en la nube. Elígela en el desplegable o guárdala primero.');
+  const nom=op.textContent;
   if(!confirm('¿Borrar «'+nom+'» de la nube? No se puede deshacer.'))return;
   try{await db.collection('monterias').doc(id).delete();msg('#m1','Montería «'+esc(nom)+'» borrada de la nube.',1);listaNube();}
   catch(e){console.error(e);msg('#m1','No se pudo borrar. Revisa que has iniciado sesión y las reglas de Firestore.');}};
